@@ -95,6 +95,15 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -108,7 +117,7 @@
   }
 
   .nav-item {
-    @apply flex flex-col items-center justify-center px-4 py-2 text-sm font-medium transition-colors;
+    @apply flex flex-col items-center justify-center px-2 py-2 text-sm font-medium transition-colors;
   }
 
   .nav-item.active {
@@ -122,4 +131,43 @@
   .side-menu-item.active {
     @apply bg-primary/10 text-primary font-medium;
   }
+  
+  /* Responsive container classes */
+  .responsive-container {
+    @apply w-full px-4 mx-auto;
+    max-width: calc(100vw - 2rem);
+  }
+  
+  @screen sm {
+    .responsive-container {
+      max-width: 640px;
+    }
+  }
+  
+  @screen md {
+    .responsive-container {
+      max-width: 768px;
+    }
+  }
+  
+  @screen lg {
+    .responsive-container {
+      max-width: 1024px;
+    }
+  }
+  
+  @screen xl {
+    .responsive-container {
+      max-width: 1280px;
+    }
+  }
+}
+
+/* Remove App.css styles that might conflict with our responsive design */
+#root {
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
 }
