@@ -28,7 +28,7 @@ const AppLayout = () => {
         <Header onMenuClick={toggleSidebar} />
         <div className="flex flex-1 overflow-hidden">
           <SideDrawer open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-          <main className="flex-1 overflow-auto p-4 pb-16 md:pb-4 max-w-full">
+          <main className={`flex-1 overflow-auto p-4 max-w-full ${isMobile ? 'pb-20' : 'pb-4'}`}>
             <div className="container mx-auto max-w-7xl">
               <Outlet />
             </div>

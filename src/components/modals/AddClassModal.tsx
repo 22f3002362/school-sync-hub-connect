@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { classesAPI } from '@/services/api';
 import { useApi } from '@/hooks/use-api';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type AddClassModalProps = {
   open: boolean;
@@ -20,6 +21,7 @@ const AddClassModal = ({ open, onClose, onClassAdded }: AddClassModalProps) => {
   const [teacherName, setTeacherName] = useState('');
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const { loading, execute: createClass } = useApi(classesAPI.createClass);
 
@@ -87,7 +89,7 @@ const AddClassModal = ({ open, onClose, onClassAdded }: AddClassModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={`sm:max-w-md max-h-[90vh] ${isMobile ? 'w-[95%] p-3' : ''} overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle>Add New Class</DialogTitle>
         </DialogHeader>
@@ -120,7 +122,7 @@ const AddClassModal = ({ open, onClose, onClassAdded }: AddClassModalProps) => {
               <SelectTrigger>
                 <SelectValue placeholder="Select subjects" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className={isMobile ? "max-h-[40vh]" : ""}>
                 {availableSubjects.map((subject) => (
                   <SelectItem key={subject.id} value={subject.id.toString()}>
                     {subject.name}
@@ -131,7 +133,7 @@ const AddClassModal = ({ open, onClose, onClassAdded }: AddClassModalProps) => {
             <div className="flex flex-wrap gap-2 mt-2">
               {selectedSubjects.map((subjectId) => {
                 const subject = availableSubjects.find(s => s.id.toString() === subjectId);
-                return (
+                return subject ? (
                   <Button
                     key={subjectId}
                     variant="outline"
@@ -139,18 +141,18 @@ const AddClassModal = ({ open, onClose, onClassAdded }: AddClassModalProps) => {
                     onClick={() => handleSubjectChange(subjectId)}
                     type="button"
                   >
-                    {subject?.name} ✕
+                    {subject.name} ✕
                   </Button>
-                );
+                ) : null;
               })}
             </div>
           </div>
           
-          <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <DialogFooter className={`mt-6 ${isMobile ? 'flex-col space-y-2' : ''}`}>
+            <Button type="button" variant="outline" onClick={onClose} className={isMobile ? "w-full" : ""}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className={isMobile ? "w-full" : ""}>
               {loading ? 'Creating...' : 'Create Class'}
             </Button>
           </DialogFooter>

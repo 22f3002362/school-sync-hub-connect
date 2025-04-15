@@ -17,19 +17,21 @@ const BottomNavigation = () => {
   // Calculate screen width for extra small devices
   const isExtraSmall = typeof window !== 'undefined' && window.innerWidth < 400;
 
+  if (!isMobile) return null;
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-10 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-10 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg">
       <div className="grid grid-cols-5 h-16">
         {navItems.map((item) => (
           <NavLink
             key={item.name}
             to={item.path}
             className={({ isActive }) => 
-              `nav-item ${isActive ? 'active' : 'text-gray-500 dark:text-gray-400'}`
+              `flex flex-col items-center justify-center py-2 px-1 ${isActive ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}`
             }
           >
-            <item.icon size={20} />
-            {!isExtraSmall && <span className="text-xs mt-1">{item.name}</span>}
+            <item.icon size={isExtraSmall ? 16 : 20} className="mb-1" />
+            {!isExtraSmall && <span className="text-xs mt-1 truncate">{item.name}</span>}
           </NavLink>
         ))}
       </div>

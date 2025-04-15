@@ -8,6 +8,31 @@
   text-align: left;
 }
 
+/* Mobile-specific adjustments */
+@media (max-width: 767px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Adjust for bottom navigation */
+  .pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4rem);
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 399px) {
+  .text-xs {
+    font-size: 0.65rem;
+  }
+  
+  .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
 /* Keep only necessary animations */
 @keyframes logo-spin {
   from {
@@ -21,5 +46,13 @@
 @media (prefers-reduced-motion: no-preference) {
   a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;
+  }
+}
+
+/* Handle iOS-specific issues */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    /* Mobile Safari includes the bottom bar in the vh calculation */
+    min-height: -webkit-fill-available;
   }
 }
