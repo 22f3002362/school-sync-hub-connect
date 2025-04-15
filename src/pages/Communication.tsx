@@ -12,6 +12,31 @@ import { communicationAPI } from '@/services/api';
 import { useApi } from '@/hooks/use-api';
 import { useToast } from '@/hooks/use-toast';
 
+type Announcement = {
+  id: number;
+  title: string;
+  content: string;
+  sender: string;
+  date: string;
+  target: string;
+};
+
+type Chat = {
+  id: number;
+  name: string;
+  role: string;
+  lastMessage: string;
+  time: string;
+  unread: number;
+};
+
+type Message = {
+  id: number;
+  senderId: string;
+  content: string;
+  time: string;
+};
+
 const Communication = () => {
   const [messageText, setMessageText] = useState('');
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
@@ -62,7 +87,7 @@ const Communication = () => {
   }, [messagesData]);
 
   // Sample data for fallback when API data is not yet available
-  const announcements = announcementsData || [
+  const announcements: Announcement[] = announcementsData as Announcement[] || [
     { 
       id: 1, 
       title: 'Annual Sports Day', 
@@ -89,7 +114,7 @@ const Communication = () => {
     },
   ];
 
-  const chats = conversationsData || [
+  const chats: Chat[] = conversationsData as Chat[] || [
     { id: 1, name: 'Sarah Johnson', role: 'Teacher', lastMessage: 'Could we discuss the math curriculum?', time: '10:30 AM', unread: 2 },
     { id: 2, name: 'Robert Smith', role: 'Parent', lastMessage: 'Thank you for the updates', time: 'Yesterday', unread: 0 },
     { id: 3, name: 'Emily Davis', role: 'Student', lastMessage: 'I have submitted my assignment', time: 'Yesterday', unread: 0 },
@@ -107,7 +132,7 @@ const Communication = () => {
   const currentChat = chats.find(chat => chat.id === selectedChat);
 
   // Sample messages data (would come from API in real app)
-  const messages = messagesData || [
+  const messages: Message[] = messagesData as Message[] || [
     { id: 1, senderId: 'them', content: 'Good morning! Could we discuss the math curriculum for Class 5-B?', time: '10:30 AM' },
     { id: 2, senderId: 'me', content: 'Of course, I\'ve been reviewing it. Do you have specific concerns?', time: '10:32 AM' },
     { id: 3, senderId: 'them', content: 'Yes, I think we should adjust the difficulty level for some students who are struggling. Can we meet to discuss?', time: '10:34 AM' },
@@ -242,7 +267,10 @@ const Communication = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <form className="space-y-4" action={handleCreateAnnouncement}>
+                  <form className="space-y-4" onSubmit={(e) => {
+                    e.preventDefault();
+                    handleCreateAnnouncement(new FormData(e.currentTarget));
+                  }}>
                     <div className="space-y-2">
                       <label className="text-sm font-medium" htmlFor="title">Title</label>
                       <Input id="title" name="title" placeholder="Announcement title" />
@@ -253,7 +281,7 @@ const Communication = () => {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium" htmlFor="target">Target Audience</label>
-                      <Select name="target">
+                      <Select name="target" defaultValue="all">
                         <SelectTrigger id="target">
                           <SelectValue placeholder="Select target audience" />
                         </SelectTrigger>

@@ -11,6 +11,28 @@ import { classesAPI, teachersAPI, subjectsAPI } from '@/services/api';
 import { useApi } from '@/hooks/use-api';
 import { useToast } from '@/hooks/use-toast';
 
+type ClassItem = {
+  id: number;
+  name: string;
+  students: number;
+  subjects: number;
+  teacher: string;
+};
+
+type Teacher = {
+  id: number;
+  name: string;
+  subjects: string[];
+  classes: number;
+};
+
+type Subject = {
+  id: number;
+  name: string;
+  teachers: number;
+  classes: number;
+};
+
 const Classes = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
@@ -56,7 +78,7 @@ const Classes = () => {
   }, [fetchClasses, fetchTeachers, fetchSubjects]);
 
   // Sample data for fallback when API data is not yet available
-  const classes = classesData || [
+  const classes: ClassItem[] = classesData as ClassItem[] || [
     { id: 1, name: 'Class 1-A', students: 32, subjects: 6, teacher: 'Ms. Johnson' },
     { id: 2, name: 'Class 2-B', students: 28, subjects: 7, teacher: 'Mr. Smith' },
     { id: 3, name: 'Class 3-C', students: 35, subjects: 8, teacher: 'Mrs. Davis' },
@@ -65,7 +87,7 @@ const Classes = () => {
     { id: 6, name: 'Class 6-C', students: 29, subjects: 10, teacher: 'Mr. Taylor' },
   ];
 
-  const teachers = teachersData || [
+  const teachers: Teacher[] = teachersData as Teacher[] || [
     { id: 1, name: 'Sarah Johnson', subjects: ['Mathematics', 'Science'], classes: 2 },
     { id: 2, name: 'Robert Smith', subjects: ['English', 'History'], classes: 3 },
     { id: 3, name: 'Laura Davis', subjects: ['Science', 'Geography'], classes: 2 },
@@ -74,7 +96,7 @@ const Classes = () => {
     { id: 6, name: 'Thomas Taylor', subjects: ['Computer Science', 'Mathematics'], classes: 2 },
   ];
 
-  const subjects = subjectsData || [
+  const subjects: Subject[] = subjectsData as Subject[] || [
     { id: 1, name: 'Mathematics', teachers: 3, classes: 6 },
     { id: 2, name: 'Science', teachers: 2, classes: 5 },
     { id: 3, name: 'English', teachers: 2, classes: 6 },

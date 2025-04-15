@@ -1,51 +1,64 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  BarChart as BarChartIcon, 
-  TrendingUp, 
-  Calendar, 
-  Clock, 
-  Users, 
-  BookOpen,
-  Activity,
-  Layers
-} from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  LineChart,
-  Line,
-  Legend,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useApi } from '@/hooks/use-api';
+import { BarChart, LineChart, PieChart, ResponsiveContainer, Bar, Line, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { Calendar, Users, GraduationCap, UserCheck, School, ArrowUp, ArrowDown, Filter } from 'lucide-react';
 import { analyticsAPI } from '@/services/api';
+import { useApi } from '@/hooks/use-api';
+
+// Define appropriate types for the data
+type PerformanceData = {
+  subject: string;
+  average: number;
+  highest: number;
+  lowest: number;
+  color: string;
+};
+
+type AttendanceData = {
+  date: string;
+  present: number;
+  absent: number;
+  total: number;
+};
+
+type SubjectPerformance = {
+  name: string;
+  value: number;
+  color: string;
+};
+
+type PerformanceTrend = {
+  month: string;
+  average: number;
+  target: number;
+};
+
+type ClassPerformance = {
+  name: string;
+  average: number;
+  highest: number;
+  improvement: number;
+};
 
 const Analytics = () => {
-  const [period, setPeriod] = useState('quarter');
-  const [selectedClass, setSelectedClass] = useState<string | null>(null);
+  const [selectedClass, setSelectedClass] = useState<string>('all');
+  const [selectedTimeframe, setSelectedTimeframe] = useState<string>('monthly');
+  const [selectedSubject, setSelectedSubject] = useState<string>('all');
 
   // API hooks
   const { 
     data: performanceData, 
     loading: performanceLoading, 
-    execute: fetchPerformance 
+    execute: fetchPerformanceData 
   } = useApi(analyticsAPI.getPerformanceData);
 
   const { 
     data: attendanceData, 
     loading: attendanceLoading, 
-    execute: fetchAttendance 
+    execute: fetchAttendanceData 
   } = useApi(analyticsAPI.getAttendanceData);
 
   const { 
@@ -55,458 +68,544 @@ const Analytics = () => {
   } = useApi(analyticsAPI.getSubjectPerformance);
 
   const { 
-    data: studentTrendsData, 
-    loading: studentTrendsLoading, 
-    execute: fetchStudentTrends 
+    data: trendData, 
+    loading: trendLoading, 
+    execute: fetchStudentPerformanceTrends 
   } = useApi(analyticsAPI.getStudentPerformanceTrends);
 
+  // Fetch initial data
   useEffect(() => {
-    // Fetch analytics data on component mount
-    fetchPerformance().catch(console.error);
-    fetchAttendance('week').catch(console.error);
+    fetchPerformanceData().catch(console.error);
+    fetchAttendanceData().catch(console.error);
     fetchSubjectPerformance().catch(console.error);
-    fetchStudentTrends().catch(console.error);
-  }, [fetchPerformance, fetchAttendance, fetchSubjectPerformance, fetchStudentTrends]);
+    fetchStudentPerformanceTrends().catch(console.error);
+  }, [fetchPerformanceData, fetchAttendanceData, fetchSubjectPerformance, fetchStudentPerformanceTrends]);
 
+  // Fetch filtered data when filters change
   useEffect(() => {
-    // Fetch attendance data when period changes
-    fetchAttendance(period === 'week' ? 'week' : 
-                   period === 'month' ? 'month' : 
-                   period === 'quarter' ? 'quarter' : 'year')
-      .catch(console.error);
-  }, [period, fetchAttendance]);
+    const filters = {
+      classId: selectedClass !== 'all' ? selectedClass : undefined,
+      timeframe: selectedTimeframe,
+      subjectId: selectedSubject !== 'all' ? selectedSubject : undefined
+    };
+    
+    fetchPerformanceData(filters).catch(console.error);
+    fetchAttendanceData(filters).catch(console.error);
+    fetchStudentPerformanceTrends(filters).catch(console.error);
+  }, [selectedClass, selectedTimeframe, selectedSubject, fetchPerformanceData, fetchAttendanceData, fetchStudentPerformanceTrends]);
 
-  useEffect(() => {
-    // Fetch performance data when selected class changes
-    if (selectedClass) {
-      fetchPerformance(parseInt(selectedClass)).catch(console.error);
-      fetchStudentTrends(parseInt(selectedClass)).catch(console.error);
-    } else {
-      fetchPerformance().catch(console.error);
-      fetchStudentTrends().catch(console.error);
-    }
-  }, [selectedClass, fetchPerformance, fetchStudentTrends]);
-
-  // Sample data for fallback when API data is not yet available
-  const performance = performanceData || [
-    { name: 'Class 1-A', score: 85 },
-    { name: 'Class 2-B', score: 78 },
-    { name: 'Class 3-C', score: 92 },
-    { name: 'Class 4-A', score: 80 },
-    { name: 'Class 5-B', score: 87 },
-    { name: 'Class 6-C', score: 76 },
-    { name: 'Class 7-A', score: 82 },
-    { name: 'Class 8-B', score: 88 },
-    { name: 'Class 9-C', score: 75 },
-    { name: 'Class 10-A', score: 89 },
-    { name: 'Class 11-B', score: 81 },
-    { name: 'Class 12-C', score: 93 },
+  // Sample data for when API data is not yet available
+  const performance: PerformanceData[] = performanceData as PerformanceData[] || [
+    { subject: 'Mathematics', average: 78, highest: 98, lowest: 45, color: '#3b82f6' },
+    { subject: 'Science', average: 72, highest: 95, lowest: 40, color: '#10b981' },
+    { subject: 'English', average: 84, highest: 100, lowest: 60, color: '#f59e0b' },
+    { subject: 'History', average: 76, highest: 92, lowest: 55, color: '#8b5cf6' },
+    { subject: 'Geography', average: 68, highest: 88, lowest: 42, color: '#ec4899' },
   ];
 
-  const attendance = attendanceData || [
-    { name: 'Mon', students: 95, teachers: 100 },
-    { name: 'Tue', students: 92, teachers: 98 },
-    { name: 'Wed', students: 90, teachers: 100 },
-    { name: 'Thu', students: 93, teachers: 97 },
-    { name: 'Fri', students: 88, teachers: 99 },
+  const attendance: AttendanceData[] = attendanceData as AttendanceData[] || [
+    { date: 'Mon', present: 450, absent: 20, total: 470 },
+    { date: 'Tue', present: 460, absent: 10, total: 470 },
+    { date: 'Wed', present: 430, absent: 40, total: 470 },
+    { date: 'Thu', present: 455, absent: 15, total: 470 },
+    { date: 'Fri', present: 445, absent: 25, total: 470 },
   ];
 
-  const subjectPerformance = subjectPerformanceData || [
-    { name: 'Math', score: 82 },
-    { name: 'Science', score: 88 },
-    { name: 'English', score: 75 },
-    { name: 'History', score: 70 },
-    { name: 'Geography', score: 65 },
-    { name: 'Art', score: 95 },
-    { name: 'Music', score: 90 },
-    { name: 'P.E.', score: 85 },
+  const subjectPerformance: SubjectPerformance[] = subjectPerformanceData as SubjectPerformance[] || [
+    { name: 'Mathematics', value: 25, color: '#3b82f6' },
+    { name: 'Science', value: 20, color: '#10b981' },
+    { name: 'English', value: 22, color: '#f59e0b' },
+    { name: 'History', value: 18, color: '#8b5cf6' },
+    { name: 'Geography', value: 15, color: '#ec4899' },
   ];
 
-  const studentTrends = studentTrendsData || [
-    { month: 'Jan', average: 76, topPerformer: 95, lowPerformer: 60 },
-    { month: 'Feb', average: 78, topPerformer: 97, lowPerformer: 62 },
-    { month: 'Mar', average: 81, topPerformer: 98, lowPerformer: 65 },
-    { month: 'Apr', average: 79, topPerformer: 96, lowPerformer: 63 },
-    { month: 'May', average: 82, topPerformer: 99, lowPerformer: 68 },
-    { month: 'Jun', average: 84, topPerformer: 100, lowPerformer: 70 },
+  const trends: PerformanceTrend[] = trendData as PerformanceTrend[] || [
+    { month: 'Jan', average: 68, target: 70 },
+    { month: 'Feb', average: 70, target: 70 },
+    { month: 'Mar', average: 72, target: 75 },
+    { month: 'Apr', average: 75, target: 75 },
+    { month: 'May', average: 74, target: 75 },
+    { month: 'Jun', average: 78, target: 80 },
+    { month: 'Jul', average: 80, target: 80 },
   ];
 
-  // Colors for pie chart
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28EFF', '#FF6B6B'];
+  const classPerformance: ClassPerformance[] = [
+    { name: 'Class 1-A', average: 82, highest: 98, improvement: 4 },
+    { name: 'Class 2-B', average: 78, highest: 95, improvement: 3 },
+    { name: 'Class 3-C', average: 80, highest: 96, improvement: 5 },
+    { name: 'Class 4-A', average: 75, highest: 92, improvement: 2 },
+    { name: 'Class 5-B', average: 79, highest: 94, improvement: 6 },
+  ];
 
-  // Get top and bottom performers
-  const sortedPerformance = [...performance].sort((a, b) => b.score - a.score);
-  const topPerformer = sortedPerformance[0];
-  const bottomPerformer = sortedPerformance[sortedPerformance.length - 1];
+  // Filter options (would come from API in a real app)
+  const classOptions = [
+    { value: 'all', label: 'All Classes' },
+    { value: '1', label: 'Class 1-A' },
+    { value: '2', label: 'Class 2-B' },
+    { value: '3', label: 'Class 3-C' },
+    { value: '4', label: 'Class 4-A' },
+    { value: '5', label: 'Class 5-B' },
+  ];
 
-  // Attendance averages
-  const studentAttendanceAvg = attendance.reduce((sum, entry) => sum + entry.students, 0) / attendance.length;
-  const teacherAttendanceAvg = attendance.reduce((sum, entry) => sum + entry.teachers, 0) / attendance.length;
+  const timeframeOptions = [
+    { value: 'weekly', label: 'This Week' },
+    { value: 'monthly', label: 'This Month' },
+    { value: 'quarterly', label: 'This Quarter' },
+    { value: 'yearly', label: 'This Year' },
+  ];
 
-  // All available classes for filter
-  const allClasses = performance.map((p, index) => ({
-    id: index + 1,
-    name: p.name
-  }));
+  const subjectOptions = [
+    { value: 'all', label: 'All Subjects' },
+    { value: '1', label: 'Mathematics' },
+    { value: '2', label: 'Science' },
+    { value: '3', label: 'English' },
+    { value: '4', label: 'History' },
+    { value: '5', label: 'Geography' },
+  ];
+
+  // Calculate overall metrics
+  const overallAttendance = attendance && attendance.length > 0 ? 
+    attendance.reduce((sum, day) => sum + day.present, 0) / 
+    attendance.reduce((sum, day) => sum + day.total, 0) * 100 : 0;
+  
+  const averagePerformance = performance && performance.length > 0 ? 
+    performance.reduce((sum, subject) => sum + subject.average, 0) / performance.length : 0;
+
+  const performanceImprovement = 3.5; // This would be calculated from historical data in a real app
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Analytics & Reports</h1>
           <p className="text-muted-foreground">
-            Monitor school performance and track important metrics.
+            Comprehensive analytics of school performance and student progress.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Select period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-              <SelectItem value="quarter">This Quarter</SelectItem>
-              <SelectItem value="year">This Year</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="bg-background border rounded-lg p-1 flex items-center gap-1">
+            <Filter className="h-4 w-4 text-muted-foreground ml-1" />
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger className="w-[160px] border-0 h-8">
+                <SelectValue placeholder="Select Class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           
-          <Select value={selectedClass || ""} onValueChange={val => setSelectedClass(val || null)}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="All Classes" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All Classes</SelectItem>
-              {allClasses.map(cls => (
-                <SelectItem key={cls.id} value={cls.id.toString()}>{cls.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="bg-background border rounded-lg p-1 flex items-center">
+            <Select value={selectedTimeframe} onValueChange={setSelectedTimeframe}>
+              <SelectTrigger className="w-[160px] border-0 h-8">
+                <SelectValue placeholder="Select Timeframe" />
+              </SelectTrigger>
+              <SelectContent>
+                {timeframeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="bg-background border rounded-lg p-1 flex items-center">
+            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+              <SelectTrigger className="w-[160px] border-0 h-8">
+                <SelectValue placeholder="Select Subject" />
+              </SelectTrigger>
+              <SelectContent>
+                {subjectOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4 text-blue-500" />
-              <span>Total Students</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,284</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-500">+2.5%</span> from last month
-            </p>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Overall Attendance</p>
+                <div className="flex items-baseline gap-1">
+                  <h3 className="text-2xl font-bold mt-1">{overallAttendance.toFixed(1)}%</h3>
+                  <span className="text-xs text-green-600 flex items-center">
+                    <ArrowUp className="h-3 w-3 mr-0.5" />
+                    1.2%
+                  </span>
+                </div>
+              </div>
+              <div className="p-2 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                <UserCheck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Activity className="h-4 w-4 text-green-500" />
-              <span>Average Attendance</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{studentAttendanceAvg.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-500">+1.2%</span> from last month
-            </p>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Average Performance</p>
+                <div className="flex items-baseline gap-1">
+                  <h3 className="text-2xl font-bold mt-1">{averagePerformance.toFixed(1)}%</h3>
+                  <span className="text-xs text-green-600 flex items-center">
+                    <ArrowUp className="h-3 w-3 mr-0.5" />
+                    {performanceImprovement}%
+                  </span>
+                </div>
+              </div>
+              <div className="p-2 bg-green-100 rounded-full dark:bg-green-900/30">
+                <GraduationCap className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-indigo-500" />
-              <span>Average GPA</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3.6/4.0</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-500">+0.2</span> from last quarter
-            </p>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Students</p>
+                <div className="flex items-baseline gap-1">
+                  <h3 className="text-2xl font-bold mt-1">470</h3>
+                  <span className="text-xs text-green-600 flex items-center">
+                    <ArrowUp className="h-3 w-3 mr-0.5" />
+                    12
+                  </span>
+                </div>
+              </div>
+              <div className="p-2 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-amber-500" />
-              <span>Performance Index</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">78/100</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-500">+5</span> from last assessment
-            </p>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">School Ranking</p>
+                <div className="flex items-baseline gap-1">
+                  <h3 className="text-2xl font-bold mt-1">Top 5%</h3>
+                  <span className="text-xs text-green-600 flex items-center">
+                    <ArrowUp className="h-3 w-3 mr-0.5" />
+                    2
+                  </span>
+                </div>
+              </div>
+              <div className="p-2 bg-amber-100 rounded-full dark:bg-amber-900/30">
+                <School className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="academic">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="academic">Academic Performance</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance Analysis</TabsTrigger>
-          <TabsTrigger value="subjects">Subject Performance</TabsTrigger>
-          <TabsTrigger value="trends">Student Trends</TabsTrigger>
+      <Tabs defaultValue="performance">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="attendance">Attendance</TabsTrigger>
+          <TabsTrigger value="subjects">Subjects</TabsTrigger>
+          <TabsTrigger value="comparison">Class Comparison</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="academic" className="pt-4">
+        <TabsContent value="performance" className="pt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChartIcon className="h-5 w-5 text-primary" />
-                <span>{selectedClass ? `${allClasses.find(c => c.id.toString() === selectedClass)?.name} Performance` : 'Class-wise Academic Performance'}</span>
-              </CardTitle>
+              <CardTitle>Student Performance Trends</CardTitle>
             </CardHeader>
             <CardContent>
-              {performanceLoading ? (
-                <div className="flex justify-center py-10">Loading performance data...</div>
-              ) : (
-                <div className="h-80">
+              <div className="h-[300px]">
+                {trendLoading ? (
+                  <div className="flex justify-center items-center h-full">Loading data...</div>
+                ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={performance}>
+                    <LineChart
+                      data={trends}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis domain={[0, 100]} />
+                      <XAxis dataKey="month" />
+                      <YAxis />
                       <Tooltip />
-                      <Bar dataKey="score" fill="#1E88E5" radius={[4, 4, 0, 0]} />
-                    </BarChart>
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="average" 
+                        stroke="#3b82f6" 
+                        strokeWidth={2}
+                        activeDot={{ r: 8 }} 
+                        name="Average Score"
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="target" 
+                        stroke="#f59e0b" 
+                        strokeDasharray="5 5" 
+                        name="Target"
+                      />
+                    </LineChart>
                   </ResponsiveContainer>
-                </div>
-              )}
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Top Performing Class</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-bold">{topPerformer?.name || 'N/A'}</div>
-                    <p className="text-xs text-muted-foreground">Average Score: {topPerformer?.score || 0}%</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Class Needing Attention</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-bold">{bottomPerformer?.name || 'N/A'}</div>
-                    <p className="text-xs text-muted-foreground">Average Score: {bottomPerformer?.score || 0}%</p>
-                  </CardContent>
-                </Card>
+                )}
               </div>
             </CardContent>
           </Card>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Class Performance Ranking</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={classPerformance.sort((a, b) => b.average - a.average)}
+                      layout="vertical"
+                      margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" domain={[0, 100]} />
+                      <YAxis type="category" dataKey="name" />
+                      <Tooltip />
+                      <Bar dataKey="average" fill="#3b82f6" name="Average Score">
+                        {classPerformance.sort((a, b) => b.average - a.average).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index === 0 ? '#10b981' : '#3b82f6'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Most Improved Classes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={classPerformance.sort((a, b) => b.improvement - a.improvement)}
+                      layout="vertical"
+                      margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis type="category" dataKey="name" />
+                      <Tooltip />
+                      <Bar dataKey="improvement" fill="#f59e0b" name="Improvement %" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
         
         <TabsContent value="attendance" className="pt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                <span>{
-                  period === 'week' ? 'Weekly' : 
-                  period === 'month' ? 'Monthly' : 
-                  period === 'quarter' ? 'Quarterly' : 'Yearly'
-                } Attendance Overview</span>
-              </CardTitle>
+              <CardTitle>Attendance Tracking</CardTitle>
             </CardHeader>
             <CardContent>
-              {attendanceLoading ? (
-                <div className="flex justify-center py-10">Loading attendance data...</div>
-              ) : (
-                <div className="h-80">
+              <div className="h-[300px]">
+                {attendanceLoading ? (
+                  <div className="flex justify-center items-center h-full">Loading data...</div>
+                ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={attendance}>
+                    <BarChart
+                      data={attendance}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis domain={[0, 100]} />
+                      <XAxis dataKey="date" />
+                      <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="students" name="Students" fill="#1E88E5" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="teachers" name="Teachers" fill="#26A69A" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="present" stackId="a" fill="#10b981" name="Present" />
+                      <Bar dataKey="absent" stackId="a" fill="#ef4444" name="Absent" />
                     </BarChart>
                   </ResponsiveContainer>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-green-800 dark:text-green-300">Average Daily Attendance</h4>
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-400 mt-1">
+                    {attendance && attendance.length > 0 
+                      ? `${((attendance.reduce((sum, day) => sum + day.present, 0) / 
+                          (attendance.length * attendance[0].total)) * 100).toFixed(1)}%` 
+                      : '0%'}
+                  </p>
                 </div>
-              )}
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Student Attendance</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-bold">{studentAttendanceAvg.toFixed(1)}%</div>
-                    <p className="text-xs text-muted-foreground">
-                      {studentAttendanceAvg > 90 ? 'Excellent attendance rate' : 
-                       studentAttendanceAvg > 80 ? 'Good attendance rate' : 
-                       'Needs improvement'}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Teacher Attendance</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-bold">{teacherAttendanceAvg.toFixed(1)}%</div>
-                    <p className="text-xs text-muted-foreground">
-                      {teacherAttendanceAvg > 95 ? 'Excellent commitment' : 'Good commitment'}
-                    </p>
-                  </CardContent>
-                </Card>
+                
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300">Total Attendance Days</h4>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-400 mt-1">
+                    {attendance ? attendance.length : 0} Days
+                  </p>
+                </div>
+                
+                <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-amber-800 dark:text-amber-300">Attendance Trend</h4>
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-400 mt-1 flex items-center">
+                    <ArrowUp className="h-5 w-5 mr-1 text-green-600" />
+                    {attendance && attendance.length > 0
+                      ? `${((attendance[attendance.length - 1].present / attendance[attendance.length - 1].total) - 
+                          (attendance[0].present / attendance[0].total)) * 100 * 5}.toFixed(1)%` 
+                      : '0%'}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
         
         <TabsContent value="subjects" className="pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-primary" />
-                <span>Subject-wise Performance</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {subjectPerformanceLoading ? (
-                  <div className="flex justify-center py-10 col-span-2">Loading subject data...</div>
-                ) : (
-                  <>
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={subjectPerformance}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis domain={[0, 100]} />
-                          <Tooltip />
-                          <Bar dataKey="score" fill="#81C784" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={subjectPerformance}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="score"
-                            nameKey="name"
-                            label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          >
-                            {subjectPerformance.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Strongest Subject</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-bold">
-                      {subjectPerformance.sort((a, b) => b.score - a.score)[0]?.name || 'N/A'}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Average Score: {subjectPerformance.sort((a, b) => b.score - a.score)[0]?.score || 0}%
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Subject Needing Improvement</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-bold">
-                      {subjectPerformance.sort((a, b) => a.score - b.score)[0]?.name || 'N/A'}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Average Score: {subjectPerformance.sort((a, b) => a.score - b.score)[0]?.score || 0}%
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Subject-wise Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
+                  {performanceLoading ? (
+                    <div className="flex justify-center items-center h-full">Loading data...</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={performance}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="subject" />
+                        <YAxis domain={[0, 100]} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="average" fill="#3b82f6" name="Average Score" />
+                        <Bar dataKey="highest" fill="#10b981" name="Highest Score" />
+                        <Bar dataKey="lowest" fill="#ef4444" name="Lowest Score" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Subject Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px] flex items-center justify-center">
+                  {subjectPerformanceLoading ? (
+                    <div>Loading data...</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={subjectPerformance}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {subjectPerformance.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
         
-        <TabsContent value="trends" className="pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Layers className="h-5 w-5 text-primary" />
-                <span>Student Performance Trends {selectedClass ? `(${allClasses.find(c => c.id.toString() === selectedClass)?.name})` : ''}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {studentTrendsLoading ? (
-                <div className="flex justify-center py-10">Loading trend data...</div>
-              ) : (
-                <div className="h-80">
+        <TabsContent value="comparison" className="pt-4">
+          <div className="grid grid-cols-1 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Class Performance Comparison</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={studentTrends}>
+                    <BarChart
+                      data={classPerformance}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
+                      <XAxis dataKey="name" />
                       <YAxis domain={[0, 100]} />
                       <Tooltip />
                       <Legend />
-                      <Line type="monotone" dataKey="average" stroke="#8884d8" activeDot={{ r: 8 }} name="Class Average" />
-                      <Line type="monotone" dataKey="topPerformer" stroke="#82ca9d" name="Top Performer" />
-                      <Line type="monotone" dataKey="lowPerformer" stroke="#ff7300" name="Low Performer" />
-                    </LineChart>
+                      <Bar dataKey="average" fill="#3b82f6" name="Average Score" />
+                      <Bar dataKey="highest" fill="#10b981" name="Highest Score" />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
-              )}
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Performance Trend</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-bold text-green-500">Improving</div>
-                    <p className="text-xs text-muted-foreground">
-                      Average score increased by {
-                        studentTrends.length > 1 ? 
-                        (studentTrends[studentTrends.length - 1].average - studentTrends[0].average).toFixed(1) : 
-                        0
-                      }% over the period
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300">Highest Performing Class</h4>
+                    <p className="text-xl font-bold text-blue-700 dark:text-blue-400 mt-1">
+                      {classPerformance.length > 0 ? 
+                        classPerformance.sort((a, b) => b.average - a.average)[0].name : "N/A"}
                     </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Gap Analysis</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-bold">{
-                      studentTrends.length > 0 ? 
-                      (studentTrends[studentTrends.length - 1].topPerformer - 
-                       studentTrends[studentTrends.length - 1].lowPerformer).toFixed(1) : 
-                      0
-                    }%</div>
-                    <p className="text-xs text-muted-foreground">
-                      Current gap between top and low performers
+                    <p className="text-sm text-blue-600 dark:text-blue-300">
+                      {classPerformance.length > 0 ? 
+                        `${classPerformance.sort((a, b) => b.average - a.average)[0].average}% Average` : ""}
                     </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
+                  </div>
+                  
+                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-green-800 dark:text-green-300">Most Improved</h4>
+                    <p className="text-xl font-bold text-green-700 dark:text-green-400 mt-1">
+                      {classPerformance.length > 0 ? 
+                        classPerformance.sort((a, b) => b.improvement - a.improvement)[0].name : "N/A"}
+                    </p>
+                    <p className="text-sm text-green-600 dark:text-green-300">
+                      {classPerformance.length > 0 ? 
+                        `${classPerformance.sort((a, b) => b.improvement - a.improvement)[0].improvement}% Improvement` : ""}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-amber-800 dark:text-amber-300">Average Performance</h4>
+                    <p className="text-xl font-bold text-amber-700 dark:text-amber-400 mt-1">
+                      {classPerformance.length > 0 ? 
+                        `${(classPerformance.reduce((sum, c) => sum + c.average, 0) / classPerformance.length).toFixed(1)}%` : "N/A"}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-purple-800 dark:text-purple-300">Performance Range</h4>
+                    <p className="text-xl font-bold text-purple-700 dark:text-purple-400 mt-1">
+                      {classPerformance.length > 0 ? 
+                        `${Math.min(...classPerformance.map(c => c.average))}% - ${Math.max(...classPerformance.map(c => c.average))}%` : "N/A"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

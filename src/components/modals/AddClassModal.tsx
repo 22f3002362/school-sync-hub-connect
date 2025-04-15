@@ -116,7 +116,7 @@ const AddClassModal = ({ open, onClose, onClassAdded }: AddClassModalProps) => {
           
           <div className="space-y-2">
             <Label htmlFor="subjects">Subjects</Label>
-            <Select>
+            <Select onValueChange={handleSubjectChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select subjects" />
               </SelectTrigger>
